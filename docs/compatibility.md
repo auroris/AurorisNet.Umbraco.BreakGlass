@@ -1,79 +1,65 @@
 # Umbraco compatibility
 
-BreakGlass supports Umbraco 17 and 18 on .NET 10 in one NuGet package. It compiles against
-17.0.0 and declares `[17.0.0, 19.0.0)` for both `Umbraco.Cms.Api.Management` and
-`Umbraco.Cms.Infrastructure`. The consuming site supplies its supported Umbraco version.
+One build of BreakGlass supports Umbraco 17 and 18. Read this page before you change the
+code in `src/Compatibility` or check the package on an Umbraco release. The
+[README](../README.md) lists the supported releases and the steps for adding an Umbraco major
+version.
 
-`Directory.Build.props` separates the compilation baseline, `UmbracoMinimumVersion`, from
-the test site's `UmbracoVersion`, which defaults to 18.3.1. Changing the test version does
-not change the package's compilation baseline. Marketplace metadata uses `SemVer` dependency
-mode to describe support through the package's declared range.
+## One build for both major versions
 
-## API wrappers
+The package depends on `Umbraco.Cms.Infrastructure` and `Umbraco.Cms.Api.Management` in the
+range `[17.0.0, 19.0.0)`, which `Directory.Packages.props` sets. It compiles against the
+lower bound, `UmbracoMinimumVersion` in `Directory.Build.props`, so its code can use only the
+APIs that Umbraco 17.0.0 has. A site restores its own Umbraco release.
 
-The wrappers live in `src/Compatibility` and follow the same pattern as the Drawio package:
+The tests build a site with a different property, `UmbracoVersion`, which defaults to the
+newest supported release. Passing `-p:UmbracoVersion=17.0.0` changes the release the tests
+run on and leaves the release the package compiles against as it is.
 
-- `IUmbracoApi` defines the CMS operations needed for administrator recovery, preparing a
-  Debug sign-in and notifying Umbraco of a successful login.
-- `UmbracoApi` implements the shared account operations: locating the built-in administrator,
-  changing its identity and password, clearing lockout and failed attempts, removing
-  two-factor enrolment for configured-password recovery, and recording Debug sign-ins.
-- `Umbraco17Api` and `Umbraco18Api` explicitly identify the supported majors. Both currently
-  use the shared implementation because these account APIs are compatible.
-- `UmbracoCompatibility` selects the adapter using the running CMS version, registers the
-  startup notification handler and installs the sign-in services through
-  `BreakGlassRegistration`. Unsupported majors have no fallback adapter.
+## Types in src/Compatibility
 
-`ConfiguredAdminPassword` coordinates startup and configuration reloads, then calls the
-adapter in a service scope. The native sign-in manager and password checker remain thin
-integration points: normal sign-in uses Umbraco's checks, and Debug sign-in requires both
-`BreakGlass:DebugSignIn` and `Umbraco:CMS:Hosting:Debug`. `DebugSignIn` defaults to `false`
-on both supported majors.
-
-Keep shared operations in `UmbracoApi`; place any differing CMS calls in the corresponding
-version adapter. Supporting another major requires an explicit adapter, integration tests
-and an updated dependency range.
-
-## Verified versions
-
-Local validation on 17 November 2026 used Windows, .NET 10, SQLite and real Umbraco sites
-bound to loopback. Each row ran the full suite through the backoffice HTTP login endpoint
-and configuration-file reloads, alongside the settings and adapter-selection checks.
-
-| Umbraco version | Result |
+| Type | Purpose |
 |---|---|
-| 17.0.0 | 25 passed, 0 failed, 0 skipped |
-| 17.8.2 | 25 passed, 0 failed, 0 skipped |
-| 18.0.0 | 25 passed, 0 failed, 0 skipped |
-| 18.3.1 | 25 passed, 0 failed, 0 skipped |
+| `IUmbracoApi` | The Umbraco operations the package needs: `ApplyAdministratorAsync`, `PrepareDebugSignInAsync` and `NotifyLoginSuccess`, with the `MajorVersion` of the adapter. |
+| `UmbracoApi` | The implementation both major versions share. It finds the built-in administrator, sets its username, email address and password, unlocks it, clears its failed sign-in attempts and removes its two-factor enrolment. For a Debug sign-in it lifts a lockout and records the sign-in time. |
+| `Umbraco17Api`, `Umbraco18Api` | The adapter for each major version. Both use the shared implementation, because Umbraco 17 and 18 have the same account APIs. |
+| `UmbracoCompatibility` | Registers `IUmbracoApi` with the adapter for the running site's major version, the handler that applies the administrator settings when Umbraco has started, and `BreakGlassRegistration`. `ImplementationType` throws `NotSupportedException` for any other major version. |
+| `BreakGlassRegistration` | Runs when Umbraco finalizes its service registrations, after every composer. It replaces the four services through which Umbraco resolves the backoffice sign-in manager with `DebugBackOfficeSignInManager`, and wraps the last registered `IBackOfficeUserPasswordChecker` in `DebugPasswordChecker`. |
+| `DebugBackOfficeSignInManager` | Derives from Umbraco's `BackOfficeSignInManager`. While Debug sign-in applies, `PasswordSignInAsync` signs in an approved account with any nonempty password. Otherwise it calls Umbraco's implementation. |
+| `DebugPasswordChecker` | Accepts any nonempty password while Debug sign-in applies. Otherwise it asks the checker the site registered, or returns `FallbackToDefaultChecker`. |
 
-Coverage includes password recovery at startup and on reload, administrator renaming,
-lockout recovery, two-factor removal, rejected passwords, default-off Debug sign-in,
-explicit enabling and disabling, and normal authentication after the setting is removed.
-The tests also verify the runtime adapter and reject unsupported majors. This validation
-uses HTTP integration tests; it does not include browser UI testing or every intervening
-Umbraco patch release.
+`ConfiguredAdminPassword`, in `src`, reads the settings at startup and on each configuration
+reload and calls `IUmbracoApi.ApplyAdministratorAsync` in a service scope. `DebugSignIn`, in
+`src`, decides on each sign-in whether Debug sign-in applies.
 
-The local NuGet package was built successfully. Inspection confirmed Umbraco assembly
-references at `17.0.0.0` and both declared dependency ranges at `[17.0.0, 19.0.0)`.
-The marketplace JSON also passed validation against its schema. Older test baselines
-reported known NuGet dependency advisories; passing the suite does not resolve them.
+Keep an operation that both major versions share in `UmbracoApi`. Put a call that differs in
+the adapter of the major version it belongs to, as an override.
 
-## Run the checks
+## Check a release
 
-Run these commands from the repository root. The test suite stops each temporary site and
-removes its temporary database when it finishes.
+Run the tests on a release from the repository root:
 
 ```powershell
-dotnet build -c Release -p:ContinuousIntegrationBuild=true
 dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=17.0.0 -p:ContinuousIntegrationBuild=true
-dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=17.8.2 -p:ContinuousIntegrationBuild=true
-dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=18.0.0 -p:ContinuousIntegrationBuild=true
-dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:ContinuousIntegrationBuild=true
-dotnet pack src/AurorisNet.Umbraco.BreakGlass.csproj -c Release -p:ContinuousIntegrationBuild=true -o artifacts/packages
 ```
 
-The existing Release workflow runs the full suite on 17.0.0 and the default 18.x test
-version before packing. The additional 17.8.2 and 18.0.0 checks above were part of local
-compatibility validation. Build warnings are errors except for the NuGet advisory warning
-codes already listed in `Directory.Build.props`.
+`ContinuousIntegrationBuild` turns build warnings into errors, as the workflows do, except
+for the NuGet advisory warnings that `Directory.Build.props` lists. To check every supported
+major version, run the command once for each release in `UmbracoReleases` in
+`Directory.Build.props`. The list starts with the first and the newest release of each major
+version, and the daily workflow adds each new release that passes.
+
+The tests start Umbraco sites on SQLite, bound to loopback, and sign in with HTTP requests
+to the backoffice login endpoint. They check:
+
+- the configured password at startup and after `appsettings.json` is saved, used exactly as
+  written;
+- recovery of a locked account with two-factor enrolment;
+- a rejected password and an empty password, which both leave the account unchanged;
+- the configured username and email address;
+- that the log contains no password;
+- Debug sign-in: off by default and in debug mode alone, on with both settings, past a
+  lockout and two-factor enrolment, off again when either setting changes or is removed;
+- that an unknown username and an empty password are refused while Debug sign-in applies;
+- the adapter for the running major version, and the error for an unsupported one;
+- the settings' defaults and validation.

@@ -1,66 +1,89 @@
 # Umbraco Break Glass
 
-`AurorisNet.Umbraco.BreakGlass` lets whoever controls an Umbraco 17 or 18 site's configuration get
-back into its backoffice when the administrator is locked out.
+`AurorisNet.Umbraco.BreakGlass` lets whoever controls an Umbraco 17 or 18 site's
+configuration get back into its backoffice when the administrator is locked out.
 
-**Recover the built-in administrator (user ID `-1`) through configuration.** Set
-`BreakGlass:AdminPassword` to choose a new password, and use `BreakGlass:AdminUserName` and
-`BreakGlass:AdminEmail` if the account also needs renaming. At startup and whenever the
-configuration reloads, a valid configured password is applied, the account is unlocked,
-failed sign-in attempts are cleared and two-factor enrolment is removed. This is the
-normal break-glass recovery route.
+![MIT license](https://raw.githubusercontent.com/auroris/AurorisNet.Build/main/badges/license-mit.svg)
+![.NET 10](https://raw.githubusercontent.com/auroris/AurorisNet.Build/main/badges/dotnet-10.svg)
+![Umbraco 17 and 18](https://raw.githubusercontent.com/auroris/AurorisNet.Build/main/badges/umbraco-17-18.svg)
 
-**Debug sign-in is an optional fallback, off by default.** Enable it only if you deliberately
-need the authentication bypass described below.
+The package gives two ways in:
 
-The package registers itself through an Umbraco composer, so installing it completes the
-setup.
+- **A configured administrator password.** Set `BreakGlass:AdminPassword`, and the package
+  sets the built-in administrator's password, unlocks the account, clears its failed sign-in
+  attempts and removes its two-factor enrolment. `BreakGlass:AdminUserName` and
+  `BreakGlass:AdminEmail` change the account's username and email address. The settings
+  apply when the site starts and whenever its configuration reloads.
+- **Debug sign-in.** While `BreakGlass:DebugSignIn` and `Umbraco:CMS:Hosting:Debug` are both
+  `true`, any nonempty password signs in to an existing, enabled account. It is off by
+  default. Read the warning under **Settings** before you turn it on.
 
 ## Install
 
-Add the package to a website project that runs Umbraco 17 or 18 on .NET 10:
+Add the package to a website project that runs Umbraco 17 or 18:
 
 ```xml
 <PackageReference Include="AurorisNet.Umbraco.BreakGlass" Version="1.*" />
 ```
 
-One package supports both majors, with dependency range `[17.0.0, 19.0.0)`. It compiles
-against Umbraco 17.0.0 and selects the adapter for the running site's major version.
-See the [compatibility guide](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md)
-for the tested versions, API wrappers and validation commands.
+The package registers itself through an Umbraco composer, so the site needs no code. After
+the site restarts, it reads the `BreakGlass` settings.
 
 ## Settings
 
-| Setting | Default | When it applies and what it does |
+The settings are in the `BreakGlass` configuration section. The three `Admin` settings apply
+to the built-in administrator (user ID `-1`), whatever its current username.
+
+| Setting | Default | What it does |
 |---|---|---|
-| `BreakGlass:AdminPassword` | empty | At startup and on every configuration reload. Sets the password of the built-in administrator (user ID `-1`, whatever its current name) exactly as written, through Umbraco's password rules, then unlocks the account, clears its failed attempts and removes its two-factor enrolment. Empty skips password recovery. A password Umbraco rejects is logged and leaves the existing password unchanged; username and email settings are applied separately. |
-| `BreakGlass:AdminUserName` | empty | At startup and on every reload. Renames the built-in administrator to this username. Empty keeps the current username. Must be an email address while `Umbraco:CMS:Security:UsernameIsEmail` is true. |
-| `BreakGlass:AdminEmail` | empty | At startup and on every reload. Must be an email address. Empty keeps the current address. |
-| `BreakGlass:DebugSignIn` | `false` | On every sign-in. Explicitly setting this to `true` allows any nonempty password for existing enabled accounts, bypassing lockout and two-factor checks, only while `Umbraco:CMS:Hosting:Debug` is also true. Missing or `false` keeps normal authentication. |
+| `BreakGlass:AdminPassword` | empty | Sets the administrator's password exactly as written, spaces included, through Umbraco's password rules. Then unlocks the account, clears its failed sign-in attempts and removes its two-factor enrolment. Empty, or spaces only, does none of this. |
+| `BreakGlass:AdminUserName` | empty | Sets the administrator's username. Empty keeps the current username. Must be an email address while `Umbraco:CMS:Security:UsernameIsEmail` is `true`. |
+| `BreakGlass:AdminEmail` | empty | Sets the administrator's email address. Empty keeps the current address. Must be an email address. |
+| `BreakGlass:DebugSignIn` | `false` | While this setting and `Umbraco:CMS:Hosting:Debug` are both `true`, any nonempty password signs in to an existing, enabled account, past lockout and two-factor checks. Both settings are read on every sign-in. |
 
-> [!WARNING]
-> **DebugSignIn bypasses authentication for existing backoffice accounts, including administrators.**
-> It defaults to `false`. If you explicitly set **both** `BreakGlass:DebugSignIn` and
-> `Umbraco:CMS:Hosting:Debug` to `true`, **anyone who can reach the backoffice login and knows
-> an enabled account's username can sign in as that account with any nonempty password**.
-> They do not need the account's real password or a two-factor code. The sign-in also lifts
-> account lockout. Unknown usernames, empty passwords and disabled accounts are still refused.
+> **Warning: `DebugSignIn` bypasses authentication for existing backoffice accounts,
+> administrators included.** While `BreakGlass:DebugSignIn` and `Umbraco:CMS:Hosting:Debug`
+> are both `true`, anyone who can reach the backoffice login and knows an enabled account's
+> username can sign in as that account with any nonempty password. They need neither the
+> account's password nor a two-factor code, and the sign-in lifts an account lockout. Unknown
+> usernames, empty passwords and disabled accounts are still refused.
 
-A site stops at startup with a configuration error when `DebugSignIn` is something other
-than `true` or `false`, when `AdminEmail` is not an email address, or when `AdminUserName` is
-not one while `UsernameIsEmail` is true. If a running site reloads invalid BreakGlass
-settings, the plugin logs the error, applies no administrator changes and disables Debug
-sign-in until the configuration is corrected. Normal sign-in continues, and previously
-applied account changes are not undone.
+### When the administrator settings apply
 
-A password rejected by Umbraco's password rules is handled separately: the rejection is
-logged and the existing password is retained. It does not disable Debug sign-in, and valid
-username or email changes may already have applied.
+The package applies the three `Admin` settings after Umbraco has started, and again each
+time the configuration reloads, so saving `appsettings.json` changes a running site. It
+applies them only while Umbraco's runtime level is `Run`. If the site starts at another
+level, for example because it waits for an upgrade, restart it once Umbraco can run.
+
+Each time, the package works in this order:
+
+1. It sets the username and email address when they differ from the account's. If Umbraco
+   rejects them, the package logs the error and stops, with the password unchanged.
+2. It sets the password when it differs from the account's. If Umbraco's password rules
+   reject it, the package logs the error and stops. The existing password, a lockout and the
+   two-factor enrolment all stay.
+3. It unlocks the account, clears its failed sign-in attempts and removes its two-factor
+   enrolment. This step also runs when the configured password is already the account's.
+
+Without `AdminPassword`, the package stops after step 1. While `AdminPassword` stays set,
+every start and every configuration reload restores that password and removes two-factor
+enrolment.
+
+### Settings that stop the site
+
+The site stops at startup with a configuration error when:
+
+- `DebugSignIn` is something other than `true` or `false`;
+- `AdminEmail` is not an email address;
+- `AdminUserName` is not an email address while `UsernameIsEmail` is `true`.
+
+When a running site reloads settings with one of these errors, the package logs the error,
+leaves the administrator as it is and turns Debug sign-in off until the settings are
+corrected. Normal sign-in continues, and changes the package applied earlier stay.
 
 ## Recover a locked-out account
 
-1. **Reset the administrator through the configuration file.** Add a new password to
-   `appsettings.json`:
+1. **Set a new password.** Add it to `appsettings.json` and save the file:
 
    ```json
    "BreakGlass": {
@@ -68,93 +91,132 @@ username or email changes may already have applied.
    }
    ```
 
-   Add `AdminUserName` and `AdminEmail` to the same section if they also need changing.
-   This targets the built-in administrator (ID `-1`), whatever its current username.
-   Save the file. A running site applies the change when the file reloads; a stopped site
-   applies it when Umbraco starts.
-2. **Log in as your administrator.** Use the configured password and the account's username,
-   including the new username if you changed it.
-3. **Remove the recovery settings, then finish securing the account.** Remove `AdminPassword`
-   and any `AdminUserName` or `AdminEmail` values you added from the `BreakGlass` section,
-   and save the file. After the configuration reloads, change your administrator password,
-   re-enrol in two-factor authentication and adjust any other account settings as needed.
-   Removing these settings does not undo the recovery. While `AdminPassword` stays set,
-   every configuration reload restores that password and removes two-factor enrolment.
-4. **Optional fallback: Debug sign-in.** If you need this alternative to the recovery steps
-   above, read the warning and restrict backoffice access to trusted operators first.
-   In `appsettings.json`, explicitly set **both** `BreakGlass:DebugSignIn` and
-   `Umbraco:CMS:Hosting:Debug` to `true`, then save. Sign in with an existing enabled
-   account's username and any nonempty password. As soon as you have access, set
-   `BreakGlass:DebugSignIn` back to `false` or remove it, turn debug mode off if you enabled
-   it for recovery, and save before repairing the account. Turning on debug mode alone
-   does not enable this fallback.
+   Add `AdminUserName` and `AdminEmail` to the same section if they need changing too. A
+   running site applies the settings when the file reloads, and a stopped site when Umbraco
+   starts.
+2. **Sign in as the administrator** with the configured password and the account's username,
+   which is the new username if you changed it.
+3. **Remove the recovery settings** from the `BreakGlass` section and save the file. The
+   recovered account keeps its new password. Do this before you choose your final password
+   and enrol in two-factor authentication again: while `AdminPassword` stays set, each
+   configuration reload restores it and removes the enrolment.
 
-### Environment variables (startup only)
+**With environment variables.** The settings can also come from environment variables, with
+`__` in place of `:`, such as `BreakGlass__AdminPassword`. .NET reads them when the site
+starts, and by default they override the same settings in `appsettings.json`. After you
+regain access, remove the variables and any matching settings in the file, and restart the
+site before you choose your final password or enrol in two-factor authentication again.
 
-BreakGlass also supports environment variables through the site's standard .NET
-configuration. Set them **before Umbraco starts**, using `__` in place of `:`, for example
-`BreakGlass__AdminPassword`, `BreakGlass__AdminUserName` or `BreakGlass__AdminEmail`.
-Environment variables are loaded at startup; changes or removals require an Umbraco restart.
-
-With the default configuration, environment variables override matching values in
-`appsettings.json`. For startup recovery, remove the recovery variables and any matching
-file settings after regaining access, then restart Umbraco **before** choosing your final
-administrator password or re-enrolling in two-factor authentication.
+**With Debug sign-in.** Read the warning under **Settings** and restrict access to the
+backoffice to trusted operators first. Set both `BreakGlass:DebugSignIn` and
+`Umbraco:CMS:Hosting:Debug` to `true` in `appsettings.json` and save the file. Sign in with
+an existing, enabled account's username and any nonempty password. As soon as you are in,
+set `DebugSignIn` back to `false` or remove it, turn debug mode off if you turned it on for
+the recovery, and save the file before you repair the account.
 
 ## Security
 
-- **Debug sign-in is off by default and works only in debug mode.** It applies while
-  `Umbraco:CMS:Hosting:Debug` **and** `BreakGlass:DebugSignIn` are both true, and never outside
-  debug mode, whatever `DebugSignIn` says. Both are read on every sign-in, so setting either
-  to `false` in the configuration file stops further bypassed sign-ins when it reloads,
-  without a restart. The environment name (`Development`, `Production`) plays no part.
+- **Debug sign-in works only in debug mode.** It applies while `Umbraco:CMS:Hosting:Debug`
+  and `BreakGlass:DebugSignIn` are both `true`. Both are read on every sign-in, so setting
+  either to `false` in the configuration file stops it when the file reloads, without a
+  restart. The environment name, such as `Development` or `Production`, plays no part.
 - **While Debug sign-in applies, anyone who reaches the backoffice login can sign in as any
-  enabled account whose username they know.** Restrict backoffice access to trusted operators
-  before enabling it on an internet-accessible site. Unknown usernames, empty passwords and
-  disabled accounts are still refused.
-  Each sign-in unlocks a locked account, logs a warning and leaves the account's password
-  and two-factor enrolment as they are.
-- **The configuration is a credential.** Whoever can change the site's configuration can
-  set the administrator's password. Protect the recovery settings as you would a password
-  and remove them after use. No log message contains the password.
-- **The package replaces Umbraco's backoffice sign-in manager**, including one the site
-  registers itself, and puts its password checker in front of the site's
-  `IBackOfficeUserPasswordChecker`. Outside Debug sign-in, both pass every call to Umbraco's
-  implementation or the site's checker unchanged.
+  enabled account whose username they know.** Restrict access to the backoffice to trusted
+  operators before you turn it on. Each Debug sign-in unlocks a locked account, records the
+  sign-in time and logs a warning with the user's ID. It leaves the account's password and
+  two-factor enrolment as they are.
+- **The configuration is a credential.** Whoever can change the site's configuration can set
+  the administrator's password. Protect the recovery settings as you would a password, and
+  remove them after use. The package's log messages leave the password out.
+- **The package replaces Umbraco's backoffice sign-in manager.** Its own sign-in manager
+  derives from Umbraco's and takes the place of every registration, including one the site
+  registered itself. Outside Debug sign-in it runs Umbraco's sign-in unchanged.
+- **The package puts its password checker in front of the site's
+  `IBackOfficeUserPasswordChecker`.** While Debug sign-in applies, the checker accepts any
+  nonempty password. Otherwise it passes each check to the site's checker, or to Umbraco's
+  own password check when the site has none.
 
 Report a vulnerability as the
 [security policy](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/SECURITY.md)
 describes.
 
+## Supported versions
+
+| Umbraco | Supported releases | Runtime |
+|---|---|---|
+| 18 | <!-- umbraco-releases 18 -->18.0.0 to 18.3.2<!-- /umbraco-releases --> | .NET 10 |
+| 17 | <!-- umbraco-releases 17 -->17.0.0 to 17.8.2<!-- /umbraco-releases --> | .NET 10 |
+
+The package accepts every release in these ranges, and the tests run on the first and the
+newest release of each major version. One package supports both major versions, with the
+Umbraco dependency range `[17.0.0, 19.0.0)`.
+
+## Documentation
+
+| Guide | Covers |
+|---|---|
+| [Umbraco compatibility](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md) | How one build supports both Umbraco major versions, the types in `src/Compatibility`, and what the tests check. |
+| [Security policy](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/SECURITY.md) | How to report a vulnerability, and which access the package gives by design. |
+
 ## Developing
 
-The repository builds with the .NET 10 SDK that `global.json` selects. The tests start real
-Umbraco sites on SQLite in a temporary folder, one at a time, in about a minute.
+Building needs the .NET 10 SDK, which `global.json` selects, and PowerShell 7 for the
+scripts.
 
 ```powershell
 dotnet build -c Release
-dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=17.0.0
+# The tests, on the newest supported Umbraco release
 dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release
+# The tests on another release
+dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=17.0.0
+# Add an Umbraco release by hand, with AurorisNet.Build cloned beside this repository
+pwsh ../AurorisNet.Build/scripts/Add-UmbracoRelease.ps1 -Releases 18.3.2
+# A local package, numbered 0.0.0-local
 dotnet pack src/AurorisNet.Umbraco.BreakGlass.csproj -c Release -o artifacts/packages
 ```
 
-The package compiles against `UmbracoMinimumVersion` (17.0.0) and supports Umbraco
-`[17.0.0, 19.0.0)` on .NET 10. The test site's `UmbracoVersion` defaults to 18.3.1; both
-properties are in `Directory.Build.props`. Override `UmbracoVersion` to run the full suite
-against another supported release without changing the package's compilation baseline.
-A local package is numbered `0.0.0-local`. Render `docs/images/icon.png` from `icon.svg` at
-128 by 128 pixels.
+The tests start Umbraco sites on SQLite in a temporary folder, sign in through the
+backoffice login endpoint and change the settings by saving `appsettings.json`.
 
-The [compatibility guide](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md)
-describes the API wrapper boundary and records the full 25-test suite passing on Umbraco
-17.0.0, 17.8.2, 18.0.0 and 18.3.1. A new CMS major requires an explicit adapter and tests.
+The full matrix is the test command once for each release in `UmbracoReleases` in
+`Directory.Build.props`. It runs on a developer's machine. GitHub tests the newest supported
+release, and each new Umbraco release when it appears.
 
-To publish, run **Actions → Release → Run workflow** on `main` with a semantic version such
-as `1.0.1`. The workflow builds with warnings as errors, runs the full tests against Umbraco
-17.0.0 and the default 18.x test version, packs, tags `v<version>`, pushes to nuget.org
-through trusted publishing as `AurorisNet` and creates the GitHub release. **dry-run** stops
-after packing and keeps the package as an artifact for
-seven days. A version with a suffix, such as `1.1.0-rc.1`, is published as a prerelease.
+`Add-UmbracoRelease.ps1` adds the release to `UmbracoReleases`, moves `UmbracoVersion` to the
+newest listed release, and rewrites the ranges in the **Supported versions** table.
+
+### Add an Umbraco major version
+
+`Add-UmbracoRelease.ps1` and the daily workflow accept releases of the listed major versions
+only. When Umbraco publishes a new major version, the workflow opens an issue titled
+`Support Umbraco <major>`, and a person adds it:
+
+1. If it runs on a newer .NET, raise the SDK in `global.json`, add the SDK to the workflows'
+   `setup-dotnet` steps, and add the target framework to `Directory.Build.props`.
+2. Add an adapter such as `Umbraco19Api` in `src/Compatibility`, with any Umbraco call that
+   differs from `UmbracoApi`, and add it to `UmbracoCompatibility.ImplementationType`.
+3. Raise the upper bound of the Umbraco dependency range in `Directory.Packages.props`, and
+   the unsupported major versions in `CompatibilityTests`.
+4. Add its first release to `UmbracoReleases` in `Directory.Build.props`, and set
+   `UmbracoVersion` to it.
+5. Add a row to the **Supported versions** table with `umbraco-releases 19` markers like
+   those in the rows above, and add the major version to the text and badge that name the
+   supported versions.
+6. Run the tests on that release, and on the first and the newest release of the other major
+   versions.
+
+## Releases
+
+The package follows Umbraco. Each day `umbraco-releases.yml` looks on nuget.org for new
+Umbraco releases and tests the package on each. A release that passes is added to
+`UmbracoReleases` and to the **Supported versions** table, and `release.yml` publishes the
+package to nuget.org and GitHub. A release that fails gets an issue.
+
+Versions are `MAJOR.MINOR.PATCH`. The package is not on nuget.org yet: start the first
+release by hand, by running `release.yml` with a version such as `1.0.0`.
+
+The [release guide](https://github.com/auroris/AurorisNet.Build/blob/main/docs/releasing.md)
+describes the workflows and how to start a release by hand.
 
 ## License
 
