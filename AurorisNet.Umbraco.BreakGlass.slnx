@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/AurorisNet.Umbraco.BreakGlass.csproj" />
+  <Project Path="tests/AurorisNet.Umbraco.BreakGlass.Tests/AurorisNet.Umbraco.BreakGlass.Tests.csproj" />
+</Solution>

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>AurorisNet.Umbraco.BreakGlass</PackageId>
+    <!-- Only the package id carries the AurorisNet prefix; the assembly and namespace keep the plain name. -->
+    <AssemblyName>BreakGlass</AssemblyName>
+    <RootNamespace>BreakGlass</RootNamespace>
+    <Title>Umbraco Break Glass</Title>
+    <!-- Local builds are a prerelease, so NuGet's cache never mixes them with a published version. The release
+         workflow supplies the published version. -->
+    <Version>0.0.0-local</Version>
+    <Authors>Auroris</Authors>
+    <Description>Emergency backoffice access for Umbraco 18: a configured administrator password that also unlocks the account and removes its two-factor enrolment, and a debug sign-in that accepts any nonempty password while Umbraco's debug mode is on. Registers automatically through a composer.</Description>
+    <PackageTags>umbraco;umbraco-marketplace;backoffice;security;recovery;login;administrator</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/auroris/AurorisNet.Umbraco.BreakGlass</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/auroris/AurorisNet.Umbraco.BreakGlass</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/releases/tag/v$(Version)</PackageReleaseNotes>
+    <DebugType>embedded</DebugType>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <NuGetAuditMode>direct</NuGetAuditMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Cms.Infrastructure" />
+    <PackageReference Include="Umbraco.Cms.Api.Management" />
+    <InternalsVisibleTo Include="BreakGlass.Tests" />
+    <!-- nuget.org renders Markdown without HTML or relative links, so the package has its own README. -->
+    <None Include="../docs/NUGET.md" Pack="true" PackagePath="README.md" />
+    <None Include="../docs/images/icon.png" Pack="true" PackagePath="/" />
+    <None Include="../LICENSE" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
