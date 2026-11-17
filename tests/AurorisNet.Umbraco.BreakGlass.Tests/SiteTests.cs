@@ -1,5 +1,7 @@
 using System.Net;
+using BreakGlass.Compatibility;
 using Microsoft.Extensions.Options;
+using Umbraco.Cms.Core.Configuration;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Security;
 
@@ -85,6 +87,10 @@ public sealed class SiteTests
             await using var site = await TestSite.StartAsync(root, TestContext.Current.CancellationToken);
             using (var scope = site.Services.CreateScope())
             {
+                var major = scope.ServiceProvider.GetRequiredService<IUmbracoVersion>().Version.Major;
+                var api = scope.ServiceProvider.GetRequiredService<IUmbracoApi>();
+                Assert.Equal(major, api.MajorVersion);
+                Assert.Equal(major == 17 ? typeof(Umbraco17Api) : typeof(Umbraco18Api), api.GetType());
                 Assert.IsType<DebugBackOfficeSignInManager>(scope.ServiceProvider.GetRequiredService<Umbraco.Cms.Web.Common.Security.IBackOfficeSignInManager>());
                 Assert.IsType<DebugBackOfficeSignInManager>(scope.ServiceProvider.GetRequiredService<ICoreBackOfficeSignInManager>());
                 Assert.IsType<DebugPasswordChecker>(scope.ServiceProvider.GetRequiredService<IBackOfficeUserPasswordChecker>());

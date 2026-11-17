@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Security;
 
-namespace BreakGlass;
+namespace BreakGlass.Compatibility;
 
 /// <summary>
 /// Puts debug sign-in in front of Umbraco's sign-in when Umbraco finalizes its service registrations, after every

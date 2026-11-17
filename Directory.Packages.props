@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Compile the package against the oldest supported API. A site restores its own Umbraco 18 release. -->
+    <!-- Compile against the oldest supported API. A site restores its own Umbraco 17 or 18 release. -->
     <PackageVersion Include="Umbraco.Cms.Infrastructure" Version="[$(UmbracoMinimumVersion), 19.0.0)" />
     <PackageVersion Include="Umbraco.Cms.Api.Management" Version="[$(UmbracoMinimumVersion), 19.0.0)" />
     <PackageVersion Include="Umbraco.Cms" Version="[$(UmbracoVersion)]" />

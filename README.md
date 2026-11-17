@@ -1,6 +1,6 @@
 # Umbraco Break Glass
 
-`AurorisNet.Umbraco.BreakGlass` lets whoever controls an Umbraco 18 site's configuration get
+`AurorisNet.Umbraco.BreakGlass` lets whoever controls an Umbraco 17 or 18 site's configuration get
 back into its backoffice when the administrator is locked out.
 
 **Recover the built-in administrator (user ID `-1`) through configuration.** Set
@@ -18,7 +18,7 @@ setup.
 
 ## Install
 
-Add the package to a website project that runs Umbraco 18 on .NET 10:
+Add the package to a website project that runs Umbraco 17 or 18 on .NET 10:
 
 ```xml
 <PackageReference Include="AurorisNet.Umbraco.BreakGlass" Version="1.*" />
@@ -124,18 +124,29 @@ Umbraco sites on SQLite in a temporary folder, one at a time, in about a minute.
 
 ```powershell
 dotnet build -c Release
+dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:UmbracoVersion=17.0.0
 dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release
 dotnet pack src/AurorisNet.Umbraco.BreakGlass.csproj -c Release -o artifacts/packages
 ```
 
-The package compiles against `UmbracoMinimumVersion` (18.0.0) and accepts any Umbraco 18
-release; the tests run on `UmbracoVersion`, both in `Directory.Build.props`. Add
-`-p:UmbracoVersion=18.0.0` to test against the oldest release. A local package is numbered
-`0.0.0-local`. Render `docs/images/icon.png` from `icon.svg` at 128 by 128 pixels.
+The package compiles against `UmbracoMinimumVersion` (17.0.0) and supports Umbraco
+`[17.0.0, 19.0.0)` on .NET 10. The test site's `UmbracoVersion` defaults to 18.3.1; both
+properties are in `Directory.Build.props`. Override `UmbracoVersion` to run the full suite
+against another supported release without changing the package's compilation baseline.
+A local package is numbered `0.0.0-local`. Render `docs/images/icon.png` from `icon.svg` at
+128 by 128 pixels.
+
+`Compatibility/IUmbracoApi` wraps administrator recovery and the account updates required
+for Debug sign-in. The running CMS major selects `Umbraco17Api` or `Umbraco18Api`. The
+operations used here are shared by both majors and live in `UmbracoApi`; any version-specific
+differences belong in the corresponding adapter. The native sign-in manager, password checker,
+service registration and startup notification handler remain thin integration points in
+`Compatibility`. A new CMS major requires an explicit adapter and tests.
 
 To publish, run **Actions → Release → Run workflow** on `main` with a semantic version such
-as `1.0.1`. The workflow builds with warnings as errors, runs the tests, packs, tags
-`v<version>`, pushes to nuget.org through trusted publishing as `AurorisNet` and creates the
+as `1.0.1`. The workflow builds with warnings as errors, runs the full tests against Umbraco
+17.0.0 and the default 18.x test version, packs, tags `v<version>`, pushes to nuget.org
+through trusted publishing as `AurorisNet` and creates the
 GitHub release. **dry-run** stops after packing and keeps the package as an artifact for
 seven days. A version with a suffix, such as `1.1.0-rc.1`, is published as a prerelease.
 

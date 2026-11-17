@@ -3,6 +3,7 @@
   "Category": "Developer Tools",
   "LicenseTypes": ["Free"],
   "PackageType": "Package",
+  "VersionDependencyMode": "SemVer",
   "DocumentationUrl": "https://github.com/auroris/AurorisNet.Umbraco.BreakGlass#settings",
   "IssueTrackerUrl": "https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/issues"
 }

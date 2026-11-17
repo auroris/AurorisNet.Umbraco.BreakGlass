@@ -1,3 +1,4 @@
+using BreakGlass.Compatibility;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Configuration.Models;
 using Microsoft.Extensions.Logging.Abstractions;

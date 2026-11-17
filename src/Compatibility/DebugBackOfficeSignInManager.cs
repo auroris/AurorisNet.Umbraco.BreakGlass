@@ -10,7 +10,7 @@ using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Security;
 using Umbraco.Cms.Web.Common.Security;
 
-namespace BreakGlass;
+namespace BreakGlass.Compatibility;
 
 /// <summary>
 /// Umbraco's backoffice sign-in manager, which also signs in with any nonempty password while debug sign-in applies.
@@ -30,7 +30,8 @@ internal sealed class DebugBackOfficeSignInManager(
     IOptions<SecuritySettings> securitySettings,
     IOptions<BackOfficeAuthenticationTypeSettings> authenticationTypes,
     IRequestCache requestCache,
-    DebugSignIn debugSignIn)
+    DebugSignIn debugSignIn,
+    IUmbracoApi api)
     : BackOfficeSignInManager(userManager, contextAccessor, externalLogins, claimsFactory,
         optionsAccessor, globalSettings, logger, schemes, confirmation, eventAggregator,
         securitySettings, authenticationTypes, requestCache)
@@ -42,28 +43,13 @@ internal sealed class DebugBackOfficeSignInManager(
         // A disabled or unconfirmed account stays closed: debug sign-in bypasses credentials, not account status.
         if (!user.IsApproved || !await CanSignInAsync(user)) return SignInResult.NotAllowed;
 
-        // Umbraco's authorize endpoint signs a locked account out again, so debug sign-in has to lift the lockout.
-        if (await UserManager.IsLockedOutAsync(user)
-            && !((await UserManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(-1))).Succeeded
-                && (await UserManager.ResetAccessFailedCountAsync(user)).Succeeded))
-        {
-            Logger.LogWarning("Could not lift the lockout for debug sign-in of backoffice user {UserId}.", user.Id);
-            return SignInResult.Failed;
-        }
-
-        user.LastLoginDate = DateTime.UtcNow;
-        var update = await UserManager.UpdateAsync(user);
-        if (!update.Succeeded)
-        {
-            Logger.LogWarning("Could not record the debug sign-in of backoffice user {UserId}.", user.Id);
-            return SignInResult.Failed;
-        }
+        if (!await api.PrepareDebugSignInAsync(user)) return SignInResult.Failed;
 
         var principal = await CreateUserPrincipalAsync(user);
         // The base SignInAsync would also update the account's security stamp. Debug sign-in leaves the account's
         // credentials as they are, while keeping the cookie handler's native login session.
         await Context.SignInAsync(AuthenticationType, principal, new AuthenticationProperties { IsPersistent = isPersistent });
-        ((BackOfficeUserManager)UserManager).NotifyLoginSuccess(Context.User, user.Id);
+        api.NotifyLoginSuccess(Context.User, user.Id);
         Logger.LogWarning("Debug sign-in for backoffice user {UserId}: Umbraco:CMS:Hosting:Debug and {Setting} are both on.",
             user.Id, BreakGlassSettings.DebugSignInKey);
         return SignInResult.Success;

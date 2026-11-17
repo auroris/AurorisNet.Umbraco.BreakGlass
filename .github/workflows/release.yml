@@ -98,10 +98,15 @@ jobs:
           "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
 
       # The tests boot real Umbraco sites with SQLite, so nothing outside the runner is needed.
-      - name: Test
+      - name: Test Umbraco 17.0.0
+        run: |
+          dotnet test --project "$env:TEST_PROJECT" -c Release -p:UmbracoVersion=17.0.0
+          if ($LASTEXITCODE -ne 0) { throw 'The Umbraco 17 tests failed.' }
+
+      - name: Test Umbraco 18
         run: |
           dotnet test --project "$env:TEST_PROJECT" -c Release
-          if ($LASTEXITCODE -ne 0) { throw 'The tests failed.' }
+          if ($LASTEXITCODE -ne 0) { throw 'The Umbraco 18 tests failed.' }
 
       - name: Pack
         env:

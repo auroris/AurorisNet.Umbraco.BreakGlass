@@ -1,6 +1,6 @@
 using Umbraco.Cms.Core.Security;
 
-namespace BreakGlass;
+namespace BreakGlass.Compatibility;
 
 /// <summary>
 /// Accepts any nonempty password while debug sign-in applies, so that <c>CheckPasswordAsync</c> agrees with the

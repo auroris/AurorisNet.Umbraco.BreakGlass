@@ -1,10 +1,9 @@
+using BreakGlass.Compatibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Notifications;
-using Umbraco.Extensions;
 
 namespace BreakGlass;
 
@@ -24,7 +23,6 @@ public sealed class BreakGlassComposer : IComposer
         builder.Services.TryAddSingleton<DebugSignIn>();
         builder.Services.TryAddSingleton<ConfiguredAdminPassword>();
         builder.Services.AddHostedService(services => services.GetRequiredService<ConfiguredAdminPassword>());
-        builder.AddNotificationAsyncHandler<UmbracoApplicationStartedNotification, ConfiguredAdminPasswordStartup>();
-        builder.WithCollectionBuilder<BreakGlassRegistration>();
+        UmbracoCompatibility.Register(builder);
     }
 }
