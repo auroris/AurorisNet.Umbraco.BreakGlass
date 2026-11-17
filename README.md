@@ -24,12 +24,17 @@ Add the package to a website project that runs Umbraco 17 or 18 on .NET 10:
 <PackageReference Include="AurorisNet.Umbraco.BreakGlass" Version="1.*" />
 ```
 
+One package supports both majors, with dependency range `[17.0.0, 19.0.0)`. It compiles
+against Umbraco 17.0.0 and selects the adapter for the running site's major version.
+See the [compatibility guide](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md)
+for the tested versions, API wrappers and validation commands.
+
 ## Settings
 
 | Setting | Default | When it applies and what it does |
 |---|---|---|
-| `BreakGlass:AdminPassword` | empty | At startup and on every configuration reload. Sets the password of the built-in administrator (user ID `-1`, whatever its current name) exactly as written, through Umbraco's password rules, then unlocks the account, clears its failed attempts and removes its two-factor enrolment. Empty leaves the account alone. A password Umbraco rejects is logged and changes nothing. |
-| `BreakGlass:AdminUserName` | empty | At startup and on every reload. Renames the built-in administrator to this username. Empty keeps the name Umbraco gave the account. Must be an email address while `Umbraco:CMS:Security:UsernameIsEmail` is true. |
+| `BreakGlass:AdminPassword` | empty | At startup and on every configuration reload. Sets the password of the built-in administrator (user ID `-1`, whatever its current name) exactly as written, through Umbraco's password rules, then unlocks the account, clears its failed attempts and removes its two-factor enrolment. Empty skips password recovery. A password Umbraco rejects is logged and leaves the existing password unchanged; username and email settings are applied separately. |
+| `BreakGlass:AdminUserName` | empty | At startup and on every reload. Renames the built-in administrator to this username. Empty keeps the current username. Must be an email address while `Umbraco:CMS:Security:UsernameIsEmail` is true. |
 | `BreakGlass:AdminEmail` | empty | At startup and on every reload. Must be an email address. Empty keeps the current address. |
 | `BreakGlass:DebugSignIn` | `false` | On every sign-in. Explicitly setting this to `true` allows any nonempty password for existing enabled accounts, bypassing lockout and two-factor checks, only while `Umbraco:CMS:Hosting:Debug` is also true. Missing or `false` keeps normal authentication. |
 
@@ -47,6 +52,10 @@ not one while `UsernameIsEmail` is true. If a running site reloads invalid Break
 settings, the plugin logs the error, applies no administrator changes and disables Debug
 sign-in until the configuration is corrected. Normal sign-in continues, and previously
 applied account changes are not undone.
+
+A password rejected by Umbraco's password rules is handled separately: the rejection is
+logged and the existing password is retained. It does not disable Debug sign-in, and valid
+username or email changes may already have applied.
 
 ## Recover a locked-out account
 
@@ -136,18 +145,15 @@ against another supported release without changing the package's compilation bas
 A local package is numbered `0.0.0-local`. Render `docs/images/icon.png` from `icon.svg` at
 128 by 128 pixels.
 
-`Compatibility/IUmbracoApi` wraps administrator recovery and the account updates required
-for Debug sign-in. The running CMS major selects `Umbraco17Api` or `Umbraco18Api`. The
-operations used here are shared by both majors and live in `UmbracoApi`; any version-specific
-differences belong in the corresponding adapter. The native sign-in manager, password checker,
-service registration and startup notification handler remain thin integration points in
-`Compatibility`. A new CMS major requires an explicit adapter and tests.
+The [compatibility guide](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md)
+describes the API wrapper boundary and records the full 25-test suite passing on Umbraco
+17.0.0, 17.8.2, 18.0.0 and 18.3.1. A new CMS major requires an explicit adapter and tests.
 
 To publish, run **Actions → Release → Run workflow** on `main` with a semantic version such
 as `1.0.1`. The workflow builds with warnings as errors, runs the full tests against Umbraco
 17.0.0 and the default 18.x test version, packs, tags `v<version>`, pushes to nuget.org
-through trusted publishing as `AurorisNet` and creates the
-GitHub release. **dry-run** stops after packing and keeps the package as an artifact for
+through trusted publishing as `AurorisNet` and creates the GitHub release. **dry-run** stops
+after packing and keeps the package as an artifact for
 seven days. A version with a suffix, such as `1.1.0-rc.1`, is published as a prerelease.
 
 ## License

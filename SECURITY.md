@@ -15,8 +15,15 @@ A report is easier to act on when it includes:
 
 ## Versions that get fixes
 
+BreakGlass supports Umbraco 17 and 18 on .NET 10. Its NuGet dependency range is
+`[17.0.0, 19.0.0)`; earlier and later CMS majors are outside the supported range.
+
 A fix is published as a new package version. Earlier versions stay as they are, so install
 the newest version for your site; a `1.*` reference picks it up on the next restore.
+
+The [compatibility tests](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/docs/compatibility.md)
+include older Umbraco baselines with known dependency advisories. Passing those tests
+confirms BreakGlass behavior on those versions; it does not resolve the underlying advisories.
 
 ## What the package covers
 
