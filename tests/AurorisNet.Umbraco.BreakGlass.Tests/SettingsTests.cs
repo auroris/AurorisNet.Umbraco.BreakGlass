@@ -8,16 +8,14 @@ namespace BreakGlass.Tests;
 /// <summary>The settings, their validation and the debug sign-in gate, without a site.</summary>
 public sealed class SettingsTests
 {
-    /// <summary>Without settings, debug sign-in is on and only the username has a value to apply.</summary>
+    /// <summary>Without settings, debug sign-in is on and the administrator's account is left as Umbraco created it.</summary>
     [Fact]
-    public void Defaults_turn_on_debug_sign_in_and_leave_the_administrator_alone_except_its_username()
+    public void Defaults_turn_on_debug_sign_in_and_leave_the_administrator_alone()
     {
         var settings = Bind([]);
         Assert.True(settings.DebugSignIn);
         Assert.Null(settings.AdminPassword);
-        Assert.Equal(BreakGlassSettings.DefaultAdminUserName, settings.GetAdminUserName(usernameIsEmail: false));
-        // While usernames are email addresses, the login form asks for one, so the username stays as it is.
-        Assert.Null(settings.GetAdminUserName(usernameIsEmail: true));
+        Assert.Null(settings.GetAdminUserName());
         Assert.Null(settings.GetAdminEmail());
     }
 
@@ -26,12 +24,12 @@ public sealed class SettingsTests
     public void Empty_strings_leave_the_administrator_alone_and_values_are_trimmed_except_the_password()
     {
         var empty = Bind(new() { ["AdminUserName"] = "", ["AdminEmail"] = " ", ["AdminPassword"] = "" });
-        Assert.Null(empty.GetAdminUserName(usernameIsEmail: false));
+        Assert.Null(empty.GetAdminUserName());
         Assert.Null(empty.GetAdminEmail());
         Assert.Equal("", empty.AdminPassword);
 
         var set = Bind(new() { ["AdminUserName"] = " root ", ["AdminEmail"] = " root@example.test ", ["AdminPassword"] = " spaced " });
-        Assert.Equal("root", set.GetAdminUserName(usernameIsEmail: false));
+        Assert.Equal("root", set.GetAdminUserName());
         Assert.Equal("root@example.test", set.GetAdminEmail());
         Assert.Equal(" spaced ", set.AdminPassword);
     }

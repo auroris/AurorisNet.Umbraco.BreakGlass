@@ -21,8 +21,6 @@ public sealed class BreakGlassSettings
     /// <summary>The full key of <see cref="AdminEmail"/>.</summary>
     public const string AdminEmailKey = SectionName + ":" + nameof(AdminEmail);
 
-    /// <summary>The administrator's username when <see cref="AdminUserName"/> is left out and usernames are not email addresses.</summary>
-    public const string DefaultAdminUserName = "admin";
 
     /// <summary>
     /// Accepts any nonempty password for an existing backoffice account, bypassing lockout and two-factor checks, but
@@ -40,9 +38,9 @@ public sealed class BreakGlassSettings
     public string? AdminPassword { get; set; }
 
     /// <summary>
-    /// The built-in administrator's username. Empty leaves it alone. Left out, it is <c>admin</c> when
-    /// <c>Umbraco:CMS:Security:UsernameIsEmail</c> is false, and left alone when usernames are email addresses,
-    /// because Umbraco's login form then asks for an email address.
+    /// The built-in administrator's username. Empty or missing leaves it alone, so the account keeps the name Umbraco
+    /// gave it. While <c>Umbraco:CMS:Security:UsernameIsEmail</c> is true it must be an email address, because Umbraco's
+    /// login form then asks for one.
     /// </summary>
     public string? AdminUserName { get; set; }
 
@@ -57,10 +55,7 @@ public sealed class BreakGlassSettings
     public bool IsDebugSignInActive(bool hostingDebug) => hostingDebug && DebugSignIn;
 
     /// <summary>The username to give the administrator, or null to leave it alone.</summary>
-    /// <param name="usernameIsEmail">The current value of <c>Umbraco:CMS:Security:UsernameIsEmail</c>.</param>
-    public string? GetAdminUserName(bool usernameIsEmail) => AdminUserName is null
-        ? usernameIsEmail ? null : DefaultAdminUserName
-        : AdminUserName.Trim() is { Length: > 0 } username ? username : null;
+    public string? GetAdminUserName() => AdminUserName?.Trim() is { Length: > 0 } username ? username : null;
 
     /// <summary>The email address to give the administrator, or null to leave it alone.</summary>
     public string? GetAdminEmail() => AdminEmail?.Trim() is { Length: > 0 } email ? email : null;

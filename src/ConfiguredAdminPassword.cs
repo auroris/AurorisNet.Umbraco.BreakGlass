@@ -22,7 +22,6 @@ namespace BreakGlass;
 public sealed class ConfiguredAdminPassword(
     IConfiguration configuration,
     IOptionsFactory<BreakGlassSettings> settingsFactory,
-    IOptionsMonitor<SecuritySettings> security,
     IServiceScopeFactory scopeFactory,
     IRuntimeState runtime,
     ILogger<ConfiguredAdminPassword> logger) : BackgroundService
@@ -83,7 +82,7 @@ public sealed class ConfiguredAdminPassword(
         // before the reload that queued this update.
         var settings = settingsFactory.Create(Options.DefaultName);
         var password = settings.AdminPassword;
-        var username = settings.GetAdminUserName(security.CurrentValue.UsernameIsEmail);
+        var username = settings.GetAdminUserName();
         var email = settings.GetAdminEmail();
         if (string.IsNullOrWhiteSpace(password) && username is null && email is null) return;
 

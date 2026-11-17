@@ -27,7 +27,7 @@ Add the package to a website project that runs Umbraco 18 on .NET 10:
 | Setting | Default | When it applies and what it does |
 |---|---|---|
 | `BreakGlass:AdminPassword` | empty | At startup and on every configuration reload. Sets the password of the built-in administrator (user ID `-1`, whatever its current name) exactly as written, through Umbraco's password rules, then unlocks the account, clears its failed attempts and removes its two-factor enrolment. Empty leaves the account alone. A password Umbraco rejects is logged and changes nothing. |
-| `BreakGlass:AdminUserName` | `admin` while `Umbraco:CMS:Security:UsernameIsEmail` is false; the current username while it is true | At startup and on every reload, also when no password is set: on a site whose usernames are not email addresses, the administrator is renamed to `admin` unless this setting names another. Empty keeps the current username. Must be an email address while `UsernameIsEmail` is true. |
+| `BreakGlass:AdminUserName` | empty | At startup and on every reload. Renames the built-in administrator to this username. Empty keeps the name Umbraco gave the account. Must be an email address while `Umbraco:CMS:Security:UsernameIsEmail` is true. |
 | `BreakGlass:AdminEmail` | empty | At startup and on every reload. Must be an email address. Empty keeps the current address. |
 | `BreakGlass:DebugSignIn` | `true` | On every sign-in. Allows Debug sign-in while `Umbraco:CMS:Hosting:Debug` is true. Set it to `false` on a site that keeps debug mode on for other reasons. |
 
