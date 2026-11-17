@@ -90,7 +90,14 @@ public sealed class SiteTests
                 Assert.IsType<DebugPasswordChecker>(scope.ServiceProvider.GetRequiredService<IBackOfficeUserPasswordChecker>());
             }
 
-            // On by default in debug mode: any nonempty password for an existing account, past lockout and two-factor.
+            // Debug mode alone does not enable the bypass: the setting must be explicitly true.
+            Assert.False(site.Services.GetRequiredService<IOptionsMonitor<BreakGlassSettings>>().CurrentValue.DebugSignIn);
+            await AssertNormalSignInAsync(site, HttpStatusCode.OK);
+            await TestSite.WriteSettingsAsync(root, Settings(debug: true, debugSignIn: true));
+            await TestSite.WaitUntilAsync(() => Task.FromResult(site.Services.GetRequiredService<IOptionsMonitor<BreakGlassSettings>>().CurrentValue.DebugSignIn),
+                "debug sign-in to be explicitly enabled");
+
+            // Once enabled, any nonempty password works for an existing account, past lockout and two-factor.
             await site.EnrollTwoFactorAsync();
             await LockAsync(site);
             var before = await site.AdministratorAsync();
@@ -120,11 +127,17 @@ public sealed class SiteTests
             Assert.True(site.Services.GetRequiredService<IOptionsMonitor<BreakGlassSettings>>().CurrentValue.DebugSignIn);
             await AssertNormalSignInAsync(site, HttpStatusCode.OK);
 
-            // Saving debug mode back on restores debug sign-in without a restart.
-            await TestSite.WriteSettingsAsync(root, Settings(debug: true, debugSignIn: null));
+            // Saving debug mode back on restores explicitly enabled debug sign-in without a restart.
+            await TestSite.WriteSettingsAsync(root, Settings(debug: true, debugSignIn: true));
             await TestSite.WaitUntilAsync(() => Task.FromResult(site.Services.GetRequiredService<IOptionsMonitor<HostingSettings>>().CurrentValue.Debug),
                 "debug mode to be switched on");
             Assert.Equal(HttpStatusCode.OK, await site.LoginAsync(TestSite.Email, AnyPassword));
+
+            // Removing the setting restores normal authentication even while debug mode stays on.
+            await TestSite.WriteSettingsAsync(root, Settings(debug: true, debugSignIn: null));
+            await TestSite.WaitUntilAsync(() => Task.FromResult(!site.Services.GetRequiredService<IOptionsMonitor<BreakGlassSettings>>().CurrentValue.DebugSignIn),
+                "debug sign-in to default to off after removing the setting");
+            await AssertNormalSignInAsync(site, HttpStatusCode.OK);
         }
         finally { TestSite.DeleteRoot(root); }
     }

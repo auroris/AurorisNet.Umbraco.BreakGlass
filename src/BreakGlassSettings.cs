@@ -24,10 +24,11 @@ public sealed class BreakGlassSettings
 
     /// <summary>
     /// Accepts any nonempty password for an existing backoffice account, bypassing lockout and two-factor checks, but
-    /// only while <c>Umbraco:CMS:Hosting:Debug</c> is true. It is on by default, so a developer can sign in to a copy
-    /// of a site without knowing its passwords; outside debug mode it has no effect.
+    /// only while <c>Umbraco:CMS:Hosting:Debug</c> is true. Defaults to false and must be explicitly enabled.
+    /// Anyone who can reach the login can then sign in as any enabled account, including an administrator,
+    /// without knowing its password or providing a two-factor code. Outside debug mode it has no effect.
     /// </summary>
-    public bool DebugSignIn { get; set; } = true;
+    public bool DebugSignIn { get; set; } = false;
 
     /// <summary>
     /// The built-in administrator's password. A valid value is applied at startup and on every configuration reload,

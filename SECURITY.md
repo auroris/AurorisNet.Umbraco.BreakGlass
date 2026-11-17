@@ -23,12 +23,14 @@ the newest version for your site; a `1.*` reference picks it up on the next rest
 The package is meant to open the backoffice to whoever controls the site's configuration,
 so some access is by design:
 
-- Anyone who can write `appsettings.json`, or set the matching environment variables, can
-  choose the built-in administrator's password. Protect the configuration as you would the
-  password itself.
-- While `Umbraco:CMS:Hosting:Debug` and `BreakGlass:DebugSignIn` are both true, anyone who
-  can reach the backoffice login can sign in to an existing account with any nonempty
-  password.
+- Anyone who can write `appsettings.json`, or supply matching environment variables when
+  Umbraco starts, can choose the built-in administrator's password. Protect the
+  configuration as you would the password itself.
+- `BreakGlass:DebugSignIn` defaults to `false`. While it and `Umbraco:CMS:Hosting:Debug`
+  are both explicitly true, anyone who can reach the backoffice login and knows an existing
+  enabled account's username can sign in as that account, including an administrator, with
+  any nonempty password. This bypasses lockout and two-factor checks without changing the
+  stored password or two-factor enrolment.
 
 A vulnerability is anything beyond that: debug sign-in applying while debug mode is off or
 `BreakGlass:DebugSignIn` is false, any sign-in to an account that does not exist or is

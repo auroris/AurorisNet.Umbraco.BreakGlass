@@ -9,7 +9,7 @@
          workflow supplies the published version. -->
     <Version>0.0.0-local</Version>
     <Authors>Auroris</Authors>
-    <Description>Emergency backoffice access for Umbraco 18: a configured administrator password that also unlocks the account and removes its two-factor enrolment, and a debug sign-in that accepts any nonempty password while Umbraco's debug mode is on. Registers automatically through a composer.</Description>
+    <Description>Emergency backoffice access for Umbraco 18: a configured administrator password that also unlocks the account and removes its two-factor enrolment, and an optional debug sign-in that accepts any nonempty password and bypasses lockout and two-factor checks. Debug sign-in is off by default and requires both BreakGlass:DebugSignIn and Umbraco:CMS:Hosting:Debug to be true. Registers automatically through a composer.</Description>
     <PackageTags>umbraco;umbraco-marketplace;backoffice;security;recovery;login;administrator</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>

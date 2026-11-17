@@ -8,12 +8,13 @@ namespace BreakGlass.Tests;
 /// <summary>The settings, their validation and the debug sign-in gate, without a site.</summary>
 public sealed class SettingsTests
 {
-    /// <summary>Without settings, debug sign-in is on and the administrator's account is left as Umbraco created it.</summary>
+    /// <summary>Without settings, debug sign-in is off and the administrator's account is left as Umbraco created it.</summary>
     [Fact]
-    public void Defaults_turn_on_debug_sign_in_and_leave_the_administrator_alone()
+    public void Defaults_turn_off_debug_sign_in_and_leave_the_administrator_alone()
     {
         var settings = Bind([]);
-        Assert.True(settings.DebugSignIn);
+        Assert.False(settings.DebugSignIn);
+        Assert.False(Gate(hostingDebug: true, settings).IsActive);
         Assert.Null(settings.AdminPassword);
         Assert.Null(settings.GetAdminUserName());
         Assert.Null(settings.GetAdminEmail());
