@@ -26,8 +26,8 @@
     <PackageReference Include="Umbraco.Cms.Infrastructure" />
     <PackageReference Include="Umbraco.Cms.Api.Management" />
     <InternalsVisibleTo Include="BreakGlass.Tests" />
-    <!-- nuget.org renders Markdown without HTML or relative links, so the package has its own README. -->
-    <None Include="../docs/NUGET.md" Pack="true" PackagePath="README.md" />
+    <!-- The repository README is also the nuget.org page, which renders Markdown without HTML or relative links. -->
+    <None Include="../README.md" Pack="true" PackagePath="/" />
     <None Include="../docs/images/icon.png" Pack="true" PackagePath="/" />
     <None Include="../LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>

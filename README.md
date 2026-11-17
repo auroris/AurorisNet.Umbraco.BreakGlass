@@ -1,81 +1,111 @@
-<h1 align="center">Umbraco Break Glass</h1>
+# Umbraco Break Glass
 
-<p align="center">
-  Get back into an Umbraco backoffice when the administrator is locked out, from the site's own settings file.
-</p>
+`AurorisNet.Umbraco.BreakGlass` lets whoever controls an Umbraco 18 site's configuration get
+back into its backoffice when the administrator is locked out. It provides two routes:
 
-<p align="center">
-  <a href="LICENSE"><img alt="MIT license" src="docs/images/badge-license.svg"></a>
-  <img alt=".NET 10" src="docs/images/badge-dotnet-10.svg">
-</p>
+- **Configured administrator password.** `BreakGlass:AdminPassword` sets the built-in
+  administrator's password at startup and whenever the configuration reloads. While it is
+  set, each application also unlocks the account, clears its failed sign-in attempts and
+  removes its two-factor enrolment.
+- **Debug sign-in.** While `Umbraco:CMS:Hosting:Debug` and `BreakGlass:DebugSignIn` are both
+  true, the backoffice signs in an existing account with any nonempty password and bypasses
+  lockout and two-factor checks.
 
-<p align="center">
-  <a href="https://www.nuget.org/packages/AurorisNet.Umbraco.BreakGlass">NuGet package</a> ·
-  <a href="#settings">Settings</a> ·
-  <a href="docs/BEHAVIOR.md#security">Security</a>
-</p>
+The package registers itself through an Umbraco composer, so installing it completes the
+setup.
 
-## What it does
+## Install
 
-`AurorisNet.Umbraco.BreakGlass` gives whoever can edit a site's `appsettings.json` a way
-back into its backoffice, without the database, a password reset email or a restart. It
-registers itself through Umbraco's composers, and installing it is the whole setup.
-
-- **A configured administrator password.** Set `BreakGlass:AdminPassword` and save the
-  file. The built-in administrator's password changes at once, and the account is unlocked,
-  its failed attempts are cleared and its two-factor enrolment is removed, so nothing stands
-  between that password and the account. The username and email can be set the same way.
-  Empty, missing or rejected values leave the account alone.
-- **Debug sign-in.** While `Umbraco:CMS:Hosting:Debug` is true, the backoffice accepts any
-  nonempty password for an existing account and skips lockout and two-factor checks. A
-  developer signs in to a copy of a site without knowing its passwords, and a deployed site
-  can be opened in an emergency by switching debug mode on. `BreakGlass:DebugSignIn` turns
-  it off. Outside debug mode it never applies, whatever the settings say.
-
-[Behavior and security](docs/BEHAVIOR.md) describes exactly what each feature changes and
-what it leaves alone.
-
-## Quick start
-
-Add the package to a website running Umbraco 18:
+Add the package to a website project that runs Umbraco 18 on .NET 10:
 
 ```xml
 <PackageReference Include="AurorisNet.Umbraco.BreakGlass" Version="1.*" />
 ```
 
-To recover the administrator, add a password to `appsettings.json` and save it:
-
-```json
-"BreakGlass": {
-  "AdminPassword": "A new password that meets the site's rules"
-}
-```
-
-Sign in as the administrator with that password, then remove the setting once the account is
-in order again: while it is set, every save of the file applies it again, and two-factor
-enrolment cannot be kept on the administrator.
-
 ## Settings
 
-| Setting | Default | Effect |
+| Setting | Default | When it applies and what it does |
 |---|---|---|
-| `BreakGlass:DebugSignIn` | `true` | Accepts any nonempty password for an existing account while `Umbraco:CMS:Hosting:Debug` is true. Has no effect outside debug mode. |
-| `BreakGlass:AdminPassword` | empty | The built-in administrator's password. Applying it also unlocks the account and removes its two-factor enrolment. |
-| `BreakGlass:AdminUserName` | `admin` | The built-in administrator's username. Empty leaves it alone. While `Umbraco:CMS:Security:UsernameIsEmail` is true, it must be an email address, and leaving it out keeps the current one. |
-| `BreakGlass:AdminEmail` | empty | The built-in administrator's email address. Empty leaves it alone. |
+| `BreakGlass:AdminPassword` | empty | At startup and on every configuration reload. Sets the password of the built-in administrator (user ID `-1`, whatever its current name) exactly as written, through Umbraco's password rules, then unlocks the account, clears its failed attempts and removes its two-factor enrolment. Empty leaves the account alone. A password Umbraco rejects is logged and changes nothing. |
+| `BreakGlass:AdminUserName` | `admin` while `Umbraco:CMS:Security:UsernameIsEmail` is false; the current username while it is true | At startup and on every reload, also when no password is set: on a site whose usernames are not email addresses, the administrator is renamed to `admin` unless this setting names another. Empty keeps the current username. Must be an email address while `UsernameIsEmail` is true. |
+| `BreakGlass:AdminEmail` | empty | At startup and on every reload. Must be an email address. Empty keeps the current address. |
+| `BreakGlass:DebugSignIn` | `true` | On every sign-in. Allows Debug sign-in while `Umbraco:CMS:Hosting:Debug` is true. Set it to `false` on a site that keeps debug mode on for other reasons. |
 
-Saving the file applies every setting to a running site. A site that starts with an
-invalid email address, or with a username the login form could not accept, stops with a
-configuration error instead of quietly failing to recover the account.
+A site stops at startup with a configuration error when `DebugSignIn` is something other
+than `true` or `false`, when `AdminEmail` is not an email address, or when `AdminUserName` is
+not one while `UsernameIsEmail` is true. A running site that reloads such a value logs the
+error, leaves the administrator's credentials as they are and turns Debug sign-in off until
+the value is corrected.
 
-## Documentation
+## Recover a locked-out account
 
-| Guide | Read it for |
-|---|---|
-| [Behavior and security](docs/BEHAVIOR.md) | What the package changes in Umbraco's sign-in, the security rules it keeps, and test coverage. |
-| [Developing](docs/DEVELOPING.md) | Building, testing and publishing a release. |
-| [Security policy](SECURITY.md) | Reporting a vulnerability. |
+1. Choose a route. For the configured password, add a new password to `appsettings.json`:
+
+   ```json
+   "BreakGlass": {
+     "AdminPassword": "A new password that meets the site's rules"
+   }
+   ```
+
+   For Debug sign-in, set `Umbraco:CMS:Hosting:Debug` to `true`.
+2. Save the file. A running site applies the change at once, and a stopped site applies it
+   when it starts. A value set as an environment variable, such as
+   `BreakGlass__AdminPassword`, takes effect after a restart.
+3. Sign in. With the configured password, use the administrator's username and that
+   password. With Debug sign-in, use the username of any existing, enabled account and any
+   nonempty password.
+4. Repair the account in **Users**: its password, two-factor enrolment, groups or status.
+5. Remove `BreakGlass:AdminPassword`, or set `Umbraco:CMS:Hosting:Debug` back to `false`,
+   and save. While `AdminPassword` stays set, every configuration reload restores that
+   password and removes the administrator's two-factor enrolment, so set the
+   administrator's own password and enrol two-factor after removing it.
+
+## Security
+
+- **Debug sign-in works only in debug mode.** It applies while `Umbraco:CMS:Hosting:Debug`
+  **and** `BreakGlass:DebugSignIn` are both true, and never outside debug mode, whatever
+  `DebugSignIn` says. Both are read on every sign-in, so saving debug mode as `false` closes
+  it without a restart. The environment name (`Development`, `Production`) plays no part.
+- **While Debug sign-in applies, anyone who reaches the backoffice login can sign in as any
+  account whose username they know.** Keep debug mode off on a reachable site except during
+  a recovery. Unknown usernames, empty passwords and disabled accounts are still refused.
+  Each sign-in unlocks a locked account, logs a warning and leaves the account's password
+  and two-factor enrolment as they are.
+- **The configuration is a credential.** Whoever can write `appsettings.json` or the site's
+  environment variables can set the administrator's password. On a shared server, supply
+  `BreakGlass__AdminPassword` from an environment variable or secret store and remove it
+  after use. No log message contains the password.
+- **The package replaces Umbraco's backoffice sign-in manager**, including one the site
+  registers itself, and puts its password checker in front of the site's
+  `IBackOfficeUserPasswordChecker`. Outside Debug sign-in, both pass every call to Umbraco's
+  implementation or the site's checker unchanged.
+
+Report a vulnerability as the
+[security policy](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/SECURITY.md)
+describes.
+
+## Developing
+
+The repository builds with the .NET 10 SDK that `global.json` selects. The tests start real
+Umbraco sites on SQLite in a temporary folder, one at a time, in about a minute.
+
+```powershell
+dotnet build -c Release
+dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release
+dotnet pack src/AurorisNet.Umbraco.BreakGlass.csproj -c Release -o artifacts/packages
+```
+
+The package compiles against `UmbracoMinimumVersion` (18.0.0) and accepts any Umbraco 18
+release; the tests run on `UmbracoVersion`, both in `Directory.Build.props`. Add
+`-p:UmbracoVersion=18.0.0` to test against the oldest release. A local package is numbered
+`0.0.0-local`. Render `docs/images/icon.png` from `icon.svg` at 128 by 128 pixels.
+
+To publish, run **Actions → Release → Run workflow** on `main` with a semantic version such
+as `1.0.1`. The workflow builds with warnings as errors, runs the tests, packs, tags
+`v<version>`, pushes to nuget.org through trusted publishing as `AurorisNet` and creates the
+GitHub release. **dry-run** stops after packing and keeps the package as an artifact for
+seven days. A version with a suffix, such as `1.1.0-rc.1`, is published as a prerelease.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/auroris/AurorisNet.Umbraco.BreakGlass/blob/main/LICENSE)
