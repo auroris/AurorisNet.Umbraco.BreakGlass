@@ -47,7 +47,7 @@ dotnet test --project tests/AurorisNet.Umbraco.BreakGlass.Tests -c Release -p:Um
 for the NuGet advisory warnings that `Directory.Build.props` lists. To check every supported
 major version, run the command once for each release in `UmbracoReleases` in
 `Directory.Build.props`. The list starts with the first and the newest release of each major
-version, and the daily workflow adds each new release that passes.
+version, and the weekly workflow adds each new release that passes.
 
 The tests start Umbraco sites on SQLite, bound to loopback, and sign in with HTTP requests
 to the backoffice login endpoint. They check:

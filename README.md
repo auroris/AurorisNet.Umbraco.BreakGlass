@@ -187,7 +187,7 @@ newest listed release, and rewrites the ranges in the **Supported versions** tab
 
 ### Add an Umbraco major version
 
-`Add-UmbracoRelease.ps1` and the daily workflow accept releases of the listed major versions
+`Add-UmbracoRelease.ps1` and the weekly workflow accept releases of the listed major versions
 only. When Umbraco publishes a new major version, the workflow opens an issue titled
 `Support Umbraco <major>`, and a person adds it:
 
@@ -207,10 +207,10 @@ only. When Umbraco publishes a new major version, the workflow opens an issue ti
 
 ## Releases
 
-The package follows Umbraco. Each day `umbraco-releases.yml` looks on nuget.org for new
+The package follows Umbraco. Each week `umbraco-releases.yml` looks on nuget.org for new
 Umbraco releases and tests the package on each. A release that passes is added to
-`UmbracoReleases` and to the **Supported versions** table, and `release.yml` publishes the
-package to nuget.org and GitHub. A release that fails gets an issue.
+`UmbracoReleases` and to the **Supported versions** table, and `weekly-release.yml` then starts
+`release.yml`, which publishes the package to nuget.org and GitHub. A release that fails gets an issue.
 
 Versions are `MAJOR.MINOR.PATCH`. The package is not on nuget.org yet: start the first
 release by hand, by running `release.yml` with a version such as `1.0.0`.
