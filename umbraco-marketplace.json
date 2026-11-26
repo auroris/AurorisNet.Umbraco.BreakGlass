@@ -1,5 +1,7 @@
 {
   "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "Title": "Break Glass",
+  "Description": "Emergency backoffice recovery for Umbraco 17 and 18: reset and unlock the built-in admin via configuration, or enable a debug-only sign-in bypass.",
   "Category": "Developer Tools",
   "LicenseTypes": ["Free"],
   "PackageType": "Package",

@@ -4,12 +4,12 @@
     <!-- Only the package id carries the AurorisNet prefix; the assembly and namespace keep the plain name. -->
     <AssemblyName>BreakGlass</AssemblyName>
     <RootNamespace>BreakGlass</RootNamespace>
-    <Title>Umbraco Break Glass</Title>
+    <Title>Break Glass</Title>
     <!-- Local builds are a prerelease, so NuGet's cache never mixes them with a published version. The release
          workflow supplies the published version. -->
     <Version>0.0.0-local</Version>
     <Authors>Auroris</Authors>
-    <Description>Emergency backoffice access for Umbraco 17 and 18: a configured administrator password that also unlocks the account and removes its two-factor enrolment, and an optional debug sign-in that accepts any nonempty password and bypasses lockout and two-factor checks. Debug sign-in is off by default and requires both BreakGlass:DebugSignIn and Umbraco:CMS:Hosting:Debug to be true. Registers automatically through a composer.</Description>
+    <Description>Emergency backoffice recovery for Umbraco 17 and 18: reset and unlock the built-in admin via configuration, or enable a debug-only sign-in bypass.</Description>
     <PackageTags>umbraco;umbraco-marketplace;backoffice;security;recovery;login;administrator</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
